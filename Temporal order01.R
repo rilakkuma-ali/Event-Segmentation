@@ -53,8 +53,8 @@ is.factor(Subject_Performance$Condition)
 lillie_Performance_SameContext <- lillie.test(Subject_Performance_SameContext$Performance)
 lillie_Performance_Boundary <- lillie.test(Subject_Performance_Boundary$Performance)
 ##### qq plot #####
-# ggqqplot(Subject_Performance_SameContext, Subject_Performance_SameContext$Performance)
-# ggqqplot(Subject_Performance_Boundary, Subject_Performance_Boundary$Performance)
+ggqqplot(Subject_Performance_SameContext, Subject_Performance_SameContext$Performance)
+ggqqplot(Subject_Performance_Boundary, Subject_Performance_Boundary$Performance)
 ##### Histograms #####
 
 
