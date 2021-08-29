@@ -20,12 +20,9 @@ setwd("C:/Projects/Event-Segmentation")
 MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All_kopia_bez3.csv")
 #MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All.csv")
 
-
+# Subseting data
 Data_SameContext <- subset.data.frame(MyData, Condition == "SameContext")
 Data_Boundary <- subset.data.frame(MyData, Condition == "Boundary")
-
-#Performance_SameContext <- sum(Data_SameContext$RecencyAcc)/nrow(Data_SameContext)
-#Performance_Boundary <- sum(Data_Boundary$RecencyAcc)/nrow(Data_Boundary)
 
 ##### Lilliefors normality test #####
 # Preparing data for Lilliefors test
@@ -52,9 +49,12 @@ is.factor(Subject_Performance$Condition)
 #Lilliefors normality test #
 lillie_Performance_SameContext <- lillie.test(Subject_Performance_SameContext$Performance)
 lillie_Performance_Boundary <- lillie.test(Subject_Performance_Boundary$Performance)
+
+lillie_Performance_SameContext
+lillie_Performance_Boundary
 ##### qq plot #####
-ggqqplot(Subject_Performance_SameContext, Subject_Performance_SameContext$Performance)
-ggqqplot(Subject_Performance_Boundary, Subject_Performance_Boundary$Performance)
+#ggqqplot(Subject_Performance_SameContext, Subject_Performance_SameContext$Performance)
+#ggqqplot(Subject_Performance_Boundary, Subject_Performance_Boundary$Performance)
 ##### Histograms #####
 
 
@@ -80,7 +80,7 @@ hist2 <- Subject_Performance_Boundary %>%
   ggplot(aes(x=Performance), stat="count") +
   geom_histogram(binwidth=bw, color="black", fill=col2)
 
-
+Histograms <- grid.arrange(hist1, hist2, ncol = 2)  
 
 ##### Box plots #####
 # Subject_Performance %>%
@@ -91,20 +91,18 @@ bxp <- ggplot(Subject_Performance,
                 geom_boxplot(notch = T)
 bxp
 ##### Outliers #####
-Subject_Performance %>%
-  group_by(Condition) %>%
-  identify_outliers(Performance)
+
 ##### Homoscedasticity - Levene Test#####
-Levene_test <- leveneTest(Subject_Performance$Performance, Subject_Performance$Condition)
+leveneTest(Subject_Performance$Performance, Subject_Performance$Condition)
 
 ##### Paired t-tests #####
 Subject_Performance <- rbind(Subject_Performance_SameContext, Subject_Performance_Boundary)
 
-Condition_Performance_paired_ttest <- t.test(Subject_Performance_SameContext$Performance, Subject_Performance_Boundary$Performance, paired = T)
-Condition_Performance_CohenD <- cohen.d(Subject_Performance_SameContext$Performance, Subject_Performance_Boundary$Performance)
+t.test(Subject_Performance_SameContext$Performance, Subject_Performance_Boundary$Performance, paired = T)
+cohen.d(Subject_Performance_SameContext$Performance, Subject_Performance_Boundary$Performance)
 ##### Two-sample t-Test #####
 
-Condition_Performance_ttest <- t.test(Subject_Performance$Performance ~ Subject_Performance$Condition, var.equal = TRUE)
+t.test(Subject_Performance$Performance ~ Subject_Performance$Condition, var.equal = TRUE)
 
 ##### ANOVA ####
 
@@ -123,6 +121,9 @@ Condition_Performance_ttest <- t.test(Subject_Performance$Performance ~ Subject_
 anova1 <- aov(Performance ~ Condition, data = Subject_Performance)
 anova1_summary <- summary(anova1)
 
+anova1
+anova1_summary
+
 # anova_formula <- y ~ w1*w2 + Error(id/(w1*w2))
 # anova2 <- anova_test(data = Subject_Performance, 
 #                      formula = anova_formula, 
@@ -133,12 +134,6 @@ anova1_summary <- summary(anova1)
 # anova2
 ##### Performing statistical tests #####
 
-lillie_Performance_SameContext 
-lillie_Performance_Boundary 
-Levene_test
-Histograms <- grid.arrange(hist1, hist2, ncol = 2)  
-Condition_Performance_paired_ttest
-Condition_Performance_CohenD
-Condition_Performance_ttest
-anova1
-anova1_summary
+
+
+
