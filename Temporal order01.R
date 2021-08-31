@@ -12,13 +12,17 @@ library(gridExtra)
 library(car)
 library(rstatix)
 library(ggpubr)
-
+library(grid)
+library(gridExtra)
+library(psych)
 
 ##### Data #####
 # Set the directory path # Paste your path
 setwd("C:/Projects/Event-Segmentation")
-MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All_kopia_bez3.csv")
-#MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All.csv")
+# Functions file:
+source("Functions_.R")
+#MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All_kopia_bez3.csv")
+MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All.csv")
 
 # Subseting data
 Data_SameContext <- subset.data.frame(MyData, Condition == "SameContext")
@@ -26,83 +30,68 @@ Data_Boundary <- subset.data.frame(MyData, Condition == "Boundary")
 
 ##### Lilliefors normality test #####
 # Preparing data for Lilliefors test
-# Condition SameContext, variable recency accuracy
-Subject_Performance_SameContext <-
-  Data_SameContext %>%
-  group_by(Subject) %>%
-  summarise_at(vars(RecencyAcc),
-               list(Performance = mean))
-Subject_Performance_SameContext$Condition <- "SameContext"
-Subject_Performance_SameContext$Condition <- as.factor(Subject_Performance_SameContext$Condition)
-
-# Condition Boundary, variable recency accuracy
-Subject_Performance_Boundary <-
-  Data_Boundary %>%
-  group_by(Subject) %>%
-  summarise_at(vars(RecencyAcc),
-               list(Performance = mean))
-Subject_Performance_Boundary$Condition <- "Boundary"
-Subject_Performance_Boundary$Condition <- as.factor(Subject_Performance_Boundary$Condition)
+Subject_Performance_SameContext <- calculate_accuracy_ratio(MyData, "RecencyAcc", "SameContext")
+Subject_Performance_Boundary <- calculate_accuracy_ratio(MyData, "RecencyAcc", "Boundary")
 
 Subject_Performance <- rbind(Subject_Performance_SameContext, Subject_Performance_Boundary)
 is.factor(Subject_Performance$Condition)
 #Lilliefors normality test #
-lillie_Performance_SameContext <- lillie.test(Subject_Performance_SameContext$Performance)
-lillie_Performance_Boundary <- lillie.test(Subject_Performance_Boundary$Performance)
+lillie.test(Subject_Performance_SameContext$ratio)
+lillie.test(Subject_Performance_Boundary$ratio)
 
-lillie_Performance_SameContext
-lillie_Performance_Boundary
 ##### qq plot #####
-#ggqqplot(Subject_Performance_SameContext, Subject_Performance_SameContext$Performance)
-#ggqqplot(Subject_Performance_Boundary, Subject_Performance_Boundary$Performance)
-##### Histograms #####
+#ggqqplot(Subject_Performance_SameContext, Subject_Performance_SameContext$ratio)
+#ggqqplot(Subject_Performance_Boundary, Subject_Performance_Boundary$ratio)
 
 
-# Bar colors
-if (lillie_Performance_SameContext$p.value > 0.05) {
-  col1 <- "green"
-  } else {
-  col1 <- "red"
-  }
-if (lillie_Performance_Boundary$p.value > 0.05) {
-  col2 <- "green"
-  } else {
-  col2 <- "red"
-  }
+##### Histograms #####==========================================================
+#===============================================================================
+#General:=======================================================================
 # Histogram bin width
 bw <- 0.05
-# Histograms:
-hist1 <- Subject_Performance_SameContext %>%
-  ggplot(aes(x=Performance), stat="count") +
-  geom_histogram(binwidth=bw, color="black", fill=col1)
+# Graph title:
+gr_title <- "Temporal order memory performance"
+# Label for x-axis:
+x_label <- "Performance -\n temporal order"
+#===============================================================================
+hist1 <- draw_a_hist(Subject_Performance_SameContext, bw, "SameContext", x_label)
+hist2 <- draw_a_hist(Subject_Performance_Boundary, bw, "Boundary", x_label)
+#===============================================================================
+Histograms <- grid.arrange(hist1, hist2, ncol = 2,
+                           top = textGrob(gr_title))  
 
-hist2 <- Subject_Performance_Boundary %>%
-  ggplot(aes(x=Performance), stat="count") +
-  geom_histogram(binwidth=bw, color="black", fill=col2)
-
-Histograms <- grid.arrange(hist1, hist2, ncol = 2)  
-
+rm(bw, gr_title, x_label, hist1, hist2, Histograms)
+#===============================================================================
 ##### Box plots #####
 # Subject_Performance %>%
 #   group_by(Condition)
 head(Subject_Performance)
 bxp <- ggplot(Subject_Performance, 
-              aes(x = Condition, y = Performance)) +
-                geom_boxplot(notch = T)
+              aes(x = Condition, y = ratio, fill = Condition)) +
+  geom_boxplot(outlier.shape=16, notch = F) +
+  scale_fill_brewer(palette="Set2") +
+  geom_jitter(shape=16, position=position_jitter(0.2), alpha=0.4) +
+  xlab("Condition") + ylab("Performance \n temporal order") +
+  labs(fill=Subject_Performance$Condition) +
+  ggtitle("Temporal order ratings performance by condition")
 bxp
+####Descriptive statistics####
+# describe.by(Subject_Distance_SameContext)
+# describe.by(Subject_Distance_Boundary)
+describe.by(Subject_Performance, group = "Condition")
 ##### Outliers #####
 
 ##### Homoscedasticity - Levene Test#####
-leveneTest(Subject_Performance$Performance, Subject_Performance$Condition)
+leveneTest(Subject_Performance$ratio, Subject_Performance$Condition)
 
 ##### Paired t-tests #####
 Subject_Performance <- rbind(Subject_Performance_SameContext, Subject_Performance_Boundary)
 
-t.test(Subject_Performance_SameContext$Performance, Subject_Performance_Boundary$Performance, paired = T)
-cohen.d(Subject_Performance_SameContext$Performance, Subject_Performance_Boundary$Performance)
+t.test(Subject_Performance_SameContext$ratio, Subject_Performance_Boundary$ratio, paired = T)
+c<- cohen.d(Subject_Performance$ratio, Subject_Performance$Condition)
 ##### Two-sample t-Test #####
 
-t.test(Subject_Performance$Performance ~ Subject_Performance$Condition, var.equal = TRUE)
+t.test(Subject_Performance$ratio ~ Subject_Performance$Condition, var.equal = TRUE)
 
 ##### ANOVA ####
 
@@ -118,7 +107,7 @@ t.test(Subject_Performance$Performance ~ Subject_Performance$Condition, var.equa
 #   #          labels = c("SameContext", "Boundary"))
 
 # ANOVA
-anova1 <- aov(Performance ~ Condition, data = Subject_Performance)
+anova1 <- aov(ratio ~ Condition, data = Subject_Performance)
 anova1_summary <- summary(anova1)
 
 anova1
@@ -127,7 +116,7 @@ anova1_summary
 # anova_formula <- y ~ w1*w2 + Error(id/(w1*w2))
 # anova2 <- anova_test(data = Subject_Performance, 
 #                      formula = anova_formula, 
-#                      dv = Subject_Performance$Performance, 
+#                      dv = Subject_Performance$ratio, 
 #                      wid = Subject_Performance$Subject, 
 #                      within = Subject_Performance$Condition)
 # 
