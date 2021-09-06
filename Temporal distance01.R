@@ -12,13 +12,19 @@ library(gridExtra)
 library(car)
 library(rstatix)
 library(ggpubr)
-
+library(grid)
+library(gridExtra)
+library(psych)
+library(pwr)
 
 ##### Data #####
 # Set the directory path # Paste your path
 setwd("C:/Projects/Event-Segmentation")
-MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All_kopia_bez3.csv")
-#MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All.csv")
+# Functions file:
+source("Functions_.R")
+
+#MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All_kopia_bez3.csv")
+MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All.csv")
 
 
 Data_SameContext <- subset.data.frame(MyData, Condition == "SameContext")
@@ -29,86 +35,117 @@ Data_Boundary <- subset.data.frame(MyData, Condition == "Boundary")
 
 ##### Lilliefors normality test #####
 # Preparing data for Lilliefors test
-# Condition SameContext, variable recency accuracy
-Subject_Distance_SameContext <-
-  Data_SameContext %>%
-  group_by(Subject) %>%
-  summarise_at(vars(DurationRESP),
-               list(Distance = mean))
-Subject_Distance_SameContext$Condition <- "SameContext"
-Subject_Distance_SameContext$Condition <- as.factor(Subject_Distance_SameContext$Condition)
-
-# Condition Boundary, variable recency accuracy
-Subject_Distance_Boundary <-
-  Data_Boundary %>%
-  group_by(Subject) %>%
-  summarise_at(vars(DurationRESP),
-               list(Distance = mean))
-Subject_Distance_Boundary$Condition <- "Boundary"
-Subject_Distance_Boundary$Condition <- as.factor(Subject_Distance_Boundary$Condition)
+Subject_Distance_SameContext <- calculate_accuracy_ratio(MyData, "DurationRESP", "SameContext")
+Subject_Distance_Boundary <- calculate_accuracy_ratio(MyData, "DurationRESP", "Boundary")
 
 Subject_Distance <- rbind(Subject_Distance_SameContext, Subject_Distance_Boundary)
 is.factor(Subject_Distance$Condition)
 #Lilliefors normality test #
-lillie_Distance_SameContext <- lillie.test(Subject_Distance_SameContext$Distance)
-lillie_Distance_Boundary <- lillie.test(Subject_Distance_Boundary$Distance)
-##### qq plot #####
-# ggqqplot(Subject_Distance_SameContext, Subject_Distance_SameContext$Distance)
-# ggqqplot(Subject_Distance_Boundary, Subject_Distance_Boundary$Distance)
-##### Histograms #####
+lillie.test(Subject_Distance_SameContext$ratio)
+lillie.test(Subject_Distance_Boundary$ratio)
 
-
-# Bar colors
-if (lillie_Distance_SameContext$p.value > 0.05) {
-  col1 <- "green"
-  } else {
-  col1 <- "red"
-  }
-if (lillie_Distance_Boundary$p.value > 0.05) {
-  col2 <- "green"
-  } else {
-  col2 <- "red"
-  }
+##### Histograms #####==========================================================
+#===============================================================================
+#General:=======================================================================
 # Histogram bin width
 bw <- 0.05
-# Histograms:
-hist1 <- Subject_Distance_SameContext %>%
-  ggplot(aes(x=Distance), stat="count") +
-  geom_histogram(binwidth=bw, color="black", fill=col1)
+# Graph title:
+gr_title <- "Temporal distance memory performance"
+# Label for x-axis:
+x_label <- "Performance -\n temporal distance"
+# y limit
+y_limit <- c(0, 5)
+#===============================================================================
+hist1 <- draw_a_hist(subset(Subject_Distance, Subject_Distance$Condition == "SameContext"), bw, "SameContext", x_label, y_limit)
+hist2 <- draw_a_hist(subset(Subject_Distance, Subject_Distance$Condition == "Boundary"), bw, "Boundary", x_label, y_limit)
+#===============================================================================
+Histograms <- grid.arrange(hist1, hist2, ncol = 2,
+                           top = textGrob(gr_title))  
 
-hist2 <- Subject_Distance_Boundary %>%
-  ggplot(aes(x=Distance), stat="count") +
-  geom_histogram(binwidth=bw, color="black", fill=col2)
+# rm(bw, gr_title, x_label, y_limit, hist1, hist2, Histograms)
+#===============================================================================
+####ggplot####
+
+ggqqplot(Subject_Distance, "ratio", facet.by = "Condition")
 
 
+##### Box plots #####===========================================================
+#===============================================================================
+#Classic boxplot
+draw_my_boxplot(Subject_Distance, 
+                "Distance \n temporal distance", 
+                "Temporal distance ratings Distance by condition")
 
-##### Box plots #####
-# Subject_Distance %>%
-#   group_by(Condition)
-head(Subject_Distance)
-bxp <- ggplot(Subject_Distance, 
-              aes(x = Condition, y = Distance)) +
-                geom_boxplot(notch = F)
-bxp
-##### Outliers #####
-Subject_Distance %>%
-  group_by(Condition) %>%
-  identify_outliers(Distance)
+#Boxplot + violinplot + median + outliers labels
+draw_my_boxplot2(Subject_Distance, 
+                "Distance \n temporal distance", 
+                "Temporal distance ratings Distance by condition")
+
+#===============================================================================
+
+##### Outliers #####============================================================
+outliers_check <- c(check_name_outliers(Subject_Distance))
+outliers_check
+outliers_list <- outliers_check[3]
+
+
+for(i in 1:length(outliers_list)) {
+  Subject_Distance <- subset(Subject_Distance, Subject != (outliers_list[i]))}
+
+#remove_outliers(Subject_Distance, outliers_list)
 ##### Homoscedasticity - Levene Test#####
-Levene_test <- leveneTest(Subject_Distance$Distance, Subject_Distance$Condition)
+leveneTest(Subject_Distance$ratio, Subject_Distance$Condition)
+
+#After removing outliers========================================================
+if (outliers_check[1] == F) {
+  break
+} else {
+  #===============================================================================
+  hist1 <- draw_a_hist(Subject_Distance_SameContext, bw, "SameContext", x_label, y_limit)
+  hist2 <- draw_a_hist(Subject_Distance_Boundary, bw, "Boundary", x_label, y_limit)
+  #===============================================================================
+  Histograms <- grid.arrange(hist1, hist2, ncol = 2,
+                             top = textGrob(gr_title)) 
+  #=============================================================================
+  #Classic boxplot
+  draw_my_boxplot(Subject_Distance, 
+                  "Distance \n temporal distance", 
+                  "Temporal distance ratings Distance by condition")
+  
+  #Boxplot + violinplot + median + outliers labels
+  draw_my_boxplot2(Subject_Distance, 
+                   "Distance \n temporal distance", 
+                   "Temporal distance ratings Distance by condition")
+}
+
+
+
+rm(bw, gr_title, x_label, y_limit, hist1, hist2, Histograms)
+
+# ####Descriptive statistics####
+# describe.by(Subject_Distance, group = "Condition")
 
 ##### Paired t-tests #####
-Subject_Distance <- rbind(Subject_Distance_SameContext, Subject_Distance_Boundary)
+#Subject_Distance <- rbind(Subject_Distance_SameContext, Subject_Distance_Boundary)
 
-Condition_Distance_paired_ttest <- t.test(Subject_Distance_SameContext$Distance, Subject_Distance_Boundary$Distance, paired = T)
-Condition_Distance_CohenD <- cohen.d(Subject_Distance_SameContext$Distance, Subject_Distance_Boundary$Distance)
+t.test(subset(Subject_Distance, Subject_Distance$Condition == "SameContext")$ratio,
+       subset(Subject_Distance, Subject_Distance$Condition == "Boundary")$ratio, 
+       paired = T)
+cohen_stats <- cohen.d(Subject_Distance$ratio, Subject_Distance$Condition)
+cohen_stats
+
+
+# Power analysis
+pwr.t.test(n = NULL, d = cohen_stats$cohen.d[2], sig.level = 0.05, power = 0.8,
+           type = c("paired"),
+           alternative = c("two.sided"))
+
 ##### Two-sample t-Test #####
 
-Condition_Distance_ttest <- t.test(Subject_Distance$Distance ~ Subject_Distance$Condition, var.equal = TRUE)
+#t.test(Subject_Distance$ratio ~ Subject_Distance$Condition, var.equal = TRUE)
+#t.test(Subject_Distance$ratio ~ Subject_Distance$Condition, var.equal = TRUE)
 
 ##### ANOVA ####
-
-# is.factor(Subject_Distance$Condition)
 
 # Subject_Distance$Condition2 <- factor(Subject_Distance$Condition, 
 #                                               levels = c(1,2), labels = c("one", "two"))
@@ -120,25 +157,25 @@ Condition_Distance_ttest <- t.test(Subject_Distance$Distance ~ Subject_Distance$
 #   #          labels = c("SameContext", "Boundary"))
 
 # ANOVA
-anova1 <- aov(Distance ~ Condition, data = Subject_Distance)
-anova1_summary <- summary(anova1)
+# https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/#data-preparation
 
-# anova_formula <- y ~ w1*w2 + Error(id/(w1*w2))
-# anova2 <- anova_test(data = Subject_Distance, 
-#                      formula = anova_formula, 
-#                      dv = Subject_Distance$Distance, 
-#                      wid = Subject_Distance$Subject, 
-#                      within = Subject_Distance$Condition)
-# 
-# anova2
+anova_formula <- y ~ w1*w2 + Error(id/(w1*w2))
+anova2 <- anova_test(data = Subject_Distance,
+                     formula = anova_formula,
+                     dv = ratio,
+                     wid = Subject,
+                     within = Condition)
+
+anova2
+
+get_anova_table(anova2)
+
+# ANOVA power analysis
+#pwr.anova.test(k = 2, n = NULL, f = NULL, sig.level = 0.05, power = NULL)
+
+
 ##### Performing statistical tests #####
 
-lillie_Distance_SameContext 
-lillie_Distance_Boundary 
-Levene_test
-Histograms <- grid.arrange(hist1, hist2, ncol = 2)  
-Condition_Distance_paired_ttest
-Condition_Distance_CohenD
-Condition_Distance_ttest
-anova1
-anova1_summary
+describe.by(Subject_Distance_SameContext)
+describe.by(Subject_Distance_Boundary)
+describe.by(Subject_Distance, group = "Condition")

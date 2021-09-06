@@ -28,14 +28,13 @@ MyData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All.cs
 Data_SameContext <- subset.data.frame(MyData, Condition == "SameContext")
 Data_Boundary <- subset.data.frame(MyData, Condition == "Boundary")
 
-##### Lilliefors normality test #####
-# Preparing data for Lilliefors test
 Subject_Performance_SameContext <- calculate_accuracy_ratio(MyData, "RecencyAcc", "SameContext")
 Subject_Performance_Boundary <- calculate_accuracy_ratio(MyData, "RecencyAcc", "Boundary")
 
 Subject_Performance <- rbind(Subject_Performance_SameContext, Subject_Performance_Boundary)
 is.factor(Subject_Performance$Condition)
-#Lilliefors normality test #
+
+##### Lilliefors normality test #####
 lillie.test(Subject_Performance_SameContext$ratio)
 lillie.test(Subject_Performance_Boundary$ratio)
 
@@ -53,34 +52,33 @@ bw <- 0.05
 gr_title <- "Temporal order memory performance"
 # Label for x-axis:
 x_label <- "Performance -\n temporal order"
+# y limit
+y_limit <- c(0, 7)
 #===============================================================================
-hist1 <- draw_a_hist(Subject_Performance_SameContext, bw, "SameContext", x_label)
-hist2 <- draw_a_hist(Subject_Performance_Boundary, bw, "Boundary", x_label)
+hist1 <- draw_a_hist(Subject_Performance_SameContext, bw, "SameContext", x_label, y_limit)
+hist2 <- draw_a_hist(Subject_Performance_Boundary, bw, "Boundary", x_label, y_limit)
 #===============================================================================
 Histograms <- grid.arrange(hist1, hist2, ncol = 2,
                            top = textGrob(gr_title))  
 
-rm(bw, gr_title, x_label, hist1, hist2, Histograms)
+rm(bw, gr_title, x_label, y_limit, hist1, hist2, Histograms)
 #===============================================================================
 ##### Box plots #####
-# Subject_Performance %>%
-#   group_by(Condition)
-head(Subject_Performance)
-bxp <- ggplot(Subject_Performance, 
-              aes(x = Condition, y = ratio, fill = Condition)) +
-  geom_boxplot(outlier.shape=16, notch = F) +
-  scale_fill_brewer(palette="Set2") +
-  geom_jitter(shape=16, position=position_jitter(0.2), alpha=0.4) +
-  xlab("Condition") + ylab("Performance \n temporal order") +
-  labs(fill=Subject_Performance$Condition) +
-  ggtitle("Temporal order ratings performance by condition")
-bxp
+
+
+draw_my_boxplot(Subject_Performance, 
+                "Performance \n temporal order", 
+                "Temporal order ratings \nPerformance by condition")
+#Boxplot + violinplot + median + outliers labels
+draw_my_boxplot2(Subject_Performance, 
+                 "Distance \n temporal distance", 
+                 "Temporal distance ratings Distance by condition")
 ####Descriptive statistics####
 # describe.by(Subject_Distance_SameContext)
 # describe.by(Subject_Distance_Boundary)
 describe.by(Subject_Performance, group = "Condition")
 ##### Outliers #####
-
+check_remove_name_outliers(Subject_Performance)
 ##### Homoscedasticity - Levene Test#####
 leveneTest(Subject_Performance$ratio, Subject_Performance$Condition)
 

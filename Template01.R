@@ -64,17 +64,18 @@ gr_title <- "Temporal distance memory performance"
 # Label for x-axis:
 x_label <- "Performance -\n temporal distance"
 # y limit
-y_limit <- c(0, 5)
+y_limit1 <- c(0, 5)
+y_limit2 <- y_limit1
 #
 #### Before removing outliers
 outliers_check <- c(check_name_outliers(MyAllData))
 # if (outliers_check[1] == T) {
   hist1 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[1]),
-                       bw, ExpConditions[1], x_label, y_limit)
+                       bw, ExpConditions[1], x_label, y_limit1)
   hist2 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[2]),
-                       bw, ExpConditions[2], x_label, y_limit)
+                       bw, ExpConditions[2], x_label, y_limit1)
   #
-  Histograms <- grid.arrange(hist1, hist2, ncol = 2,
+  HistogramsA <- grid.arrange(hist1, hist2, ncol = 2,
                              top = textGrob(gr_title))
   
   #rm(bw, gr_title, x_label, y_limit, hist1, hist2, Histograms)
@@ -85,19 +86,20 @@ outliers_check <- c(check_name_outliers(MyAllData))
   
   ##### Box plots #####===========================================================
   #Classic boxplot
-  draw_my_boxplot(MyAllData,
-                  "Distance \n temporal distance",
-                  "Temporal distance ratings Distance by condition")
+  # boxplot1A <- draw_my_boxplot(MyAllData,
+  #                 "Distance \n temporal distance",
+  #                 "Temporal distance ratings Distance by condition")
   
   #Boxplot + violinplot + median + outliers labels
-  draw_my_boxplot2(MyAllData,
+  boxplot1B <- draw_my_boxplot2(MyAllData,
                    "Distance \n temporal distance",
                    "Temporal distance ratings Distance by condition")
 # } else {
 #   break
 #}
 
-
+  # boxplot1A
+  boxplot1B
 
 
 ##### Outliers #####============================================================
@@ -105,42 +107,41 @@ outliers_check <- c(check_name_outliers(MyAllData))
 outliers_check
 outliers_list <- outliers_check[3]
 
-for(i in 1:length(outliers_list)) {
-  MyAllData <- subset(MyAllData, Subject != (outliers_list[i]))}
+# for(i in 1:length(outliers_list)) {
+#   MyAllData <- subset(MyAllData, Subject != (outliers_list[i]))}
 
-remove_outliers(MyAllData, outliers_list)
+MyAllData <- remove_outliers(MyAllData, outliers_list)
+
+is.factor(MyAllData$Condition)
+
 #### Homoscedasticity - Levene Test#####
 leveneTest(MyAllData$ratio, MyAllData$Condition)
 
 #After removing outliers========================================================
-# hist1 <- draw_a_hist(MyAllData_SameContext, bw, "SameContext", x_label, y_limit)
-# hist2 <- draw_a_hist(MyAllData_Boundary, bw, "Boundary", x_label, y_limit)
-# 
-# Histograms <- grid.arrange(hist1, hist2, ncol = 2,
-#                            top = textGrob(gr_title))
 
 hist1 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[1]),
-                     bw, ExpConditions[1], x_label, y_limit)
+                     bw, ExpConditions[1], x_label, y_limit2)
 hist2 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[2]),
-                     bw, ExpConditions[2], x_label, y_limit)
+                     bw, ExpConditions[2], x_label, y_limit2)
 #
-Histograms <- grid.arrange(hist1, hist2, ncol = 2,
+HistogramsB <- grid.arrange(hist1, hist2, ncol = 2,
                            top = textGrob(gr_title))
 
 # qqplot
 ggqqplot(MyAllData, "ratio", facet.by = GrVariable)
 
 #Classic boxplot
-draw_my_boxplot(MyAllData,
+boxplot2A <- draw_my_boxplot(MyAllData,
                 "Distance \n temporal distance",
                 "Temporal distance ratings Distance by condition")
 
 #Boxplot + violinplot + median + outliers labels
-draw_my_boxplot2(MyAllData,
+boxplot2B <- draw_my_boxplot2(MyAllData,
                  "Distance \n temporal distance",
                  "Temporal distance ratings Distance by condition")
 
-
+boxplot2A
+boxplot2B
 # #Histogram - General:=======================================================================
 # # Histogram bin width
 # bw <- 0.05
@@ -216,7 +217,7 @@ draw_my_boxplot2(MyAllData,
 #   leveneTest(MyAllData$ratio, MyAllData$Condition)
 # }
 
-rm(bw, gr_title, x_label, y_limit, hist1, hist2, Histograms)
+rm(bw, gr_title, x_label, y_limit1, y_limit2, hist1, hist2, Histograms)
 
 # ####Descriptive statistics####
 # describe.by(MyAllData, group = GrVariable)
