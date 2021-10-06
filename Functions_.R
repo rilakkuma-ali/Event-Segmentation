@@ -36,6 +36,19 @@ calculate_accuracy_ratio <- function(data_frame, variable, condition) {
   return(Subject_calculate_accuracy_ratio)
 }
 
+#====calculate_accuracy_ratio_block()==========================================
+calculate_accuracy_ratio_block <- function(data_frame, variable, block) {
+  Data_block <- subset.data.frame(data_frame, Block == block)
+  Subject_calculate_accuracy_ratio <-
+    Data_block %>%
+    group_by(Subject) %>%
+    summarise_at(vars(variable),
+                 list(ratio = mean))
+  Subject_calculate_accuracy_ratio$Block <- block
+  # Subject_calculate_accuracy_ratio$Block <- as.factor(Subject_calculate_accuracy_ratio$block)
+  return(Subject_calculate_accuracy_ratio)
+}
+
 
 #====create_MyAllData()=========================================================
 # Function create_MyAllData() takes the input dataframe, 
@@ -148,7 +161,7 @@ draw_my_boxplot <-function(box_data, y_label, boxpl_titel) {
 
 # Boxplot - violinplot
 # https://indrajeetpatil.github.io/ggstatsplot/articles/web_only/ggbetweenstats.html
-draw_my_boxplot2 <-function(box_data, y_label, boxpl_titel) {
+draw_my_boxplot2 <-function(box_data, box_ylabel, boxpl_titel) {
   head(box_data)
   ggbetweenstats(data = box_data, 
                  plot.type = "box",
@@ -159,9 +172,23 @@ draw_my_boxplot2 <-function(box_data, y_label, boxpl_titel) {
                  outlier.label = Subject,
                  package = "yarrr",
                  palette = "basel",
-                 title = box_titel)
+                 title = boxpl_titel)
 }
 
+
+draw_my_boxplot3 <-function(box_data, y_label, boxpl_titel) {
+  head(box_data)
+  ggbetweenstats(data = box_data, 
+                 plot.type = "box",
+                 x = Condition,
+                 y = ratio,
+                 ylab = box_ylabel,
+                 outlier.tagging = F,
+                 # outlier.label = Subject,
+                 package = "yarrr",
+                 palette = "basel",
+                 title = box_titel)
+}
 #====check_name_outliers()======================================================
 
 # check_name_outliers <- function(data_to_check) {
@@ -192,7 +219,7 @@ are_any_outliers <- function(outliers_subjects){
   !is.null(outliers_subjects)
   }
   
-#=====remove_outliers()=========================================================
+#====remove_outliers()=========================================================
 remove_outliers <- function(data_to_check, list_of_outliers) {
   for(i in 1:length(list_of_outliers)) {
     data_to_check <- subset(data_to_check, Subject != (list_of_outliers[i]))}
@@ -222,4 +249,91 @@ split_time_series <- function(dat, variab, var_names, conditions) {
   }
   # dato <- subset(dato, dato$ratio != ".")
   return(dato)
+}
+#====Z netu zapisywanie tabelek=================================================
+get.values<-function(x){
+  require(psych)
+  info<-describeBy(x[,2:5], group = x[,1])
+  n.companies<-length(levels(df[,1]))
+  n<-list()
+  mean<-list()
+  sd<-list()
+  min<-list()
+  max<-list()
+  for(i in 1:n.companies){
+    n[[i]]<-info[[i]][,2]
+    mean[[i]]<-info[[i]][,3]
+    sd[[i]]<-info[[i]][,4]
+    min[[i]]<-info[[i]][,8]
+    max[[i]]<-info[[i]][,9]
+  }
+  l<-Map(c, mean, sd, min, max, n)
+  valuedf<-do.call(rbind, l)
+  return(valuedf)
+}
+
+get.names<-function(x){
+  require(psych)
+  names<-rownames(describe(x[,2:5]))
+  avg<-character()
+  sd<-character()
+  min<-character()
+  max<-character()
+  total<-character()
+  for(i in 1:length(names)){
+    avg[i]<-paste("average number of", names[i])
+    sd[i]<-paste("standard deviation of", names[i])
+    min[i]<-paste("min number of", names[i])
+    max[i]<-paste("max number of", names[i])
+    total[i]<-paste("total number of", names[i])
+  }
+  cnames<-c(avg,sd,min,max,total)
+  return(cnames)
+}
+
+#====name_subjects_del()
+# Function returns the vector with subject IDs for subjects that:
+# have the mean performance in all conditions below given value
+name_subjects_del <- function(data, subject_id, cut_point){
+  subjects_to_del <- c()
+  for(i in 1:length(unique(c(subject_id)))) {
+    tmp <- data %>% 
+      filter(Subject == subject_id[i]) 
+    ratio_tmp <- mean(tmp$ratio)
+    if(ratio_tmp < cut_point) {
+      subjects_to_del <- append(subjects_to_del, subject_id[i])
+    }
+  }
+  return(subjects_to_del)
+}
+
+#====name_subjects_del_all_blocks()
+# Function returns the vector with subject IDs for subjects that:
+# have the mean performance in all conditions below given value
+name_subjects_del <- function(data, subject_id, condition, cut_point){
+  cond <- unique(c(condition))
+  subjects <- unique(c(subject_id))
+  subjects_to_del <- tibble(Subject, 
+                            Condition, 
+                            counter)
+  for(e in 1:lenght(cond)){
+    
+    tmp_tibble <- tibble(Subject=subjects, 
+                              Condition=cond[e], 
+                              counter=0)
+    for(i in 1:length(subjects)) {
+      tmp <- data %>% 
+        filter(Subject == subjects[i]) 
+      ratio_tmp <- mean(tmp$ratio)
+      
+      if(ratio_tmp < cut_point) {
+        subjects_to_del[subjects_to_del$Subject == subjects[i], "counter"] <- 
+          subjects_to_del$counter[i] +1
+        
+      }
+      subjects_to_del <- rbind(subjects_to_del, tmp_tibble)
+    }
+  }
+
+  return(subjects_to_del)
 }

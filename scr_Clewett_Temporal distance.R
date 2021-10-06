@@ -16,8 +16,7 @@ library(ggpubr) #yes
 library(gridExtra) #yes
 library(psych) #yes
 library(pwr) #yes
-
-
+library(finalfit)
 
 print(c(1:(118*2)*0))
 
@@ -28,48 +27,74 @@ setwd("C:/Projects/Event-Segmentation")
 source("Functions_.R")
 
 #=======Data====================================================================
-AllData <- read.csv("C:/Projects/Event-Segmentation/data_Clewett/Clewett_source_Exp3.csv", dec=",")
-
+# AllData <- read.csv("C:/Projects/Event-Segmentation/data_RUB/TemporalMemory_Results_All.csv")
+AllData <- read.csv("C:/Projects/Event-Segmentation/data_Clewett/Clewett_temp_dist_Exp3.csv", dec=",")
 #=======Variables===============================================================
-MyVariable <- "ratio" #variable to test
+MyVariable <- "DurationRESP" #variable to test
 GrVariable <- "Condition" #grouping variable
 
 ExpConditions <- c(unique(AllData$Condition)) #List of conditions
 ExpConditions
-Subject <- "Subject"
 
 #=======Data preparation========================================================
-# MyAllData <- data.frame(matrix(ncol = 3, nrow = 0))
+MyAllData <- data.frame(matrix(ncol = 3, nrow = 0))
 # colnames(MyAllData) <- c("Subject", "ratio", GrVariable)
 MyAllData <- data.frame(AllData[1], AllData[3], AllData[4])
+as.factor(MyAllData$Condition)
 
 # for (i in 1:length(ExpConditions)) {
 #   tmp <- calculate_accuracy_ratio(AllData, MyVariable, ExpConditions[i])
 #   MyAllData <- rbind(MyAllData, tmp)
 # }
-MyAllData$Condition <- as.factor(MyAllData$Condition)
 is.factor(MyAllData$Condition)
 
 #=======Plots titels and labels=================================================
 #General
-MyVariableLabel <- "Source memory"   #Label for the variable to test
-gr_title <- "Source memory performance"  #Histogram titel
+MyVariableLabel <- "Temporal distance"   #Label for the variable to test
+gr_title <- "Temporal distance memory accuracy ratio"  #Histogram titel
 titel_outliers_rm <- "\nOutliers removed"   #Information about removed outliers
 
 #Histogram
-hist_title <- gr_title                              # Histogram titel
+hist_title <- "Temporal distance accuracy ratio by Condition"   # Histogram titel
 bw <- 0.05                                          # Histogram bin width
-x_label <- "Performance -\n source memory"      # Label for x-axis
+x_label <- "Temporal distance - Accuracy ratio"         # Label for x-axis
 y_limit1 <- c(0, 5)                                 # y limit
 #QQ plot
 qqtitel <- "Quantile-Quantile plot"                 # QQ plot titel
 
 #Boxplot
-box_ylabel <- MyVariableLabel  #label for the boxplot y-axis
-box_titel <- "My boxplot titel"
-box_titel < paste(gr_title, " ", box_titel, sep="")
+# box_ylabel <- MyVariableLabel  #label for the boxplot y-axis
+box_ylabel <- "Temporal distance - accuracy ratio" #label for the boxplot y-axis
 
-
+box_titel <- "Temporal distance ratings accuracy ratio by condition"
+# box_titel < paste(gr_title, " ", box_titel, sep="")
+#=======Freq bar plot=====================================================
+# 
+# cond1 <- subset(AllData, AllData$Condition == ExpConditions[1])
+# cond2 <- subset(AllData, AllData$Condition == ExpConditions[2])
+# 
+# v1 <-
+#   as.data.frame(table(cond1$DurationRESP))
+# v1$Condition <- ExpConditions[1]
+# 
+# v2 <-
+#   as.data.frame(table(cond2$DurationRESP))
+# v2$Condition <- ExpConditions[2]
+# 
+# 
+# v <- rbind(v1, v2)
+# 
+# Barplot1 <- ggplot(data=v, aes(x=Condition,
+#                                y=Freq,
+#                                fill=Var1)) +
+#   # ylab("Frequency")
+#   geom_bar(position="stack", stat="identity") +
+#   scale_fill_brewer(palette="Paired") +
+#   ggtitle(paste("Number of datapoints for each condition. \nVariable: ", MyVariable, sep="")) +
+#   labs(fill = MyVariable)
+# theme_minimal()
+# 
+# Barplot1
 
 #=======Lilliefors normality test===============================================
 
@@ -88,25 +113,13 @@ describe.by(MyAllData, group = GrVariable)
 #Before removing outliers
 #outliers_check <- c(check_name_outliers(MyAllData))
 
-# hist1 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[1]),
-#                      bw, ExpConditions[1], x_label, y_limit1)
-# hist2 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[2]),
-#                      bw, ExpConditions[2], x_label, y_limit1)
-# #
-# HistogramsA <- grid.arrange(hist1, hist2, ncol = 2,
-#                           top = textGrob(hist_title))
-
 hist1 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[1]),
                      bw, ExpConditions[1], x_label, y_limit1)
 hist2 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[2]),
                      bw, ExpConditions[2], x_label, y_limit1)
-hist3 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[3]),
-                     bw, ExpConditions[3], x_label, y_limit1)
-hist4 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[4]),
-                     bw, ExpConditions[4], x_label, y_limit1)
 #
-HistogramsA <- grid.arrange(hist1, hist2, hist3, hist4, ncol = 2, nrow = 2,
-                            top = textGrob(hist_title))
+HistogramsA <- grid.arrange(hist1, hist2, ncol = 2,
+                           top = textGrob(hist_title))
 
 #rm(bw, hist_title, x_label, y_limit, hist1, hist2, Histograms)
 
@@ -116,8 +129,8 @@ ggqqplot(MyAllData, "ratio", facet.by = GrVariable,
 
 #=======Box plots===============================================================
 boxplot1B <- draw_my_boxplot2(MyAllData,
-                 "Distance \n temporal distance",
-                 "Temporal distance ratings Distance by condition")
+                 x_label,
+                 box_titel)
 boxplot1B
 
 #=======Outliers================================================================
@@ -127,111 +140,69 @@ outliers_list <- outliers_check
 
 MyAllData2 <- remove_outliers(MyAllData, outliers_list)
 
-is.factor(MyAllData$Condition)
+is.factor(MyAllData2$Condition)
 
 #=======Homoscedasticity - Levene Test==========================================
 leveneTest(MyAllData2$ratio, MyAllData2$Condition)
 
 #=======Histogram - After removing outliers=====================================
-gr_title <- paste(gr_title, "\n", titel_outliers_rm, sep="")
+gr_title <- paste(gr_title, "\n", "Outliers removed", sep="")
 hist1 <- draw_a_hist(subset(MyAllData2, MyAllData2$Condition == ExpConditions[1]),
                      bw, ExpConditions[1], x_label, y_limit1)
 hist2 <- draw_a_hist(subset(MyAllData2, MyAllData2$Condition == ExpConditions[2]),
                      bw, ExpConditions[2], x_label, y_limit1)
-hist3 <- draw_a_hist(subset(MyAllData2, MyAllData2$Condition == ExpConditions[3]),
-                     bw, ExpConditions[3], x_label, y_limit1)
-hist4 <- draw_a_hist(subset(MyAllData2, MyAllData2$Condition == ExpConditions[4]),
-                     bw, ExpConditions[4], x_label, y_limit1)
-#
-HistogramsA <- grid.arrange(hist1, hist2, hist3, hist4, ncol = 2, nrow = 2,
-                            top = textGrob(hist_title))
+HistogramsB <- grid.arrange(hist1, hist2, ncol = 2,
+                           top = textGrob(hist_title))
 
 #=======qqplot - After removing outliers========================================
 qqtitel <- paste(qqtitel, titel_outliers_rm, sep="")
-ggqqplot(MyAllData, "ratio", facet.by = GrVariable,
+ggqqplot(MyAllData2, "ratio", facet.by = GrVariable,
          title=qqtitel)
 
 #=======Box plots - After removing outliers=====================================
-boxplot1B <- draw_my_boxplot2(MyAllData2,
-                              "Distance \n temporal distance",
-                              "Temporal distance ratings Distance by condition")
-boxplot1B
-
-
 box_titel <- paste(box_titel, titel_outliers_rm, sep="")
-boxplot2B <- draw_my_boxplot2(MyAllData,
+boxplot2B <- draw_my_boxplot2(MyAllData2,
                  "Distance \n temporal distance",
                  "Temporal distance ratings Distance by condition")
 
 boxplot2B
 
-rm(bw, hist_title, x_label, y_limit1, y_limit2, hist1, hist2, boxplot1B, boxplot2B, HistogramsA, HistogramsB)
+# rm(bw, hist_title, x_label, y_limit1, y_limit2, hist1, hist2, boxplot1B, boxplot2B, HistogramsA, HistogramsB)
 
 #=======Descriptive statistics - After removing outliers========================
 describe.by(MyAllData2, group = GrVariable)
 
-# #=======Paired t-test - After removing outliers=================================
+# #=======Paired t-test ==========================================================
 # t.test(subset(MyAllData, MyAllData$Condition == "SameContext")$ratio,
 #        subset(MyAllData, MyAllData$Condition == "Boundary")$ratio, 
 #        paired = T)
 # cohen_stats <- cohen.d(MyAllData$ratio, MyAllData$Condition)
 # cohen_stats
 
+#=======Paired t-test - After removing outliers=================================
+t.test(subset(MyAllData2, MyAllData2$Condition == "SameContext")$ratio,
+       subset(MyAllData2, MyAllData2$Condition == "Boundary")$ratio,
+       paired = T)
+cohen_stats <- cohen.d(MyAllData$ratio, MyAllData$Condition)
+cohen_stats
 
-# #=======t-test Power analysis - After removing outliers=========================
-# pwr.t.test(n = NULL, d = cohen_stats$cohen.d[2], sig.level = 0.05, power = 0.8,
-#            type = c("paired"),
-#            alternative = c("two.sided"))
-# 
+
+#=======t-test Power analysis - After removing outliers=========================
+pwr.t.test(n = NULL, d = cohen_stats$cohen.d[2], sig.level = 0.05, power = 0.8,
+           type = c("paired"),
+           alternative = c("two.sided"))
+
 
 #=======ANOVA - After removing outliers=========================================
-# anova_results <- anova_test(data = MyAllData,
-#                      dv = ratio,
-#                      wid = Subject,
-#                      within = Condition)
-# anova_results
-# # anova_table <- get_anova_table(anova2)
-# # anova_table
-# 
-# #ANOVA power analysis
-# pwr.anova.test(k = 2, n = NULL, f = anova_results[1, 4], sig.level = 0.05, power = 0.8)
-# 
-# 
+anova_results <- anova_test(data = MyAllData,
+                     dv = ratio,
+                     wid = Subject,
+                     within = Condition)
+anova_results
+# anova_table <- get_anova_table(anova2)
+# anova_table
 
-#https://datascienceplus.com/one-way-anova-in-r/
-#https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/
-# anov2 <- aov(ratio ~ Condition, data = MyAllData)
-# # Summary of the analysis
-# summary(anov2)
-# TukeyHSD(anov2, conf.level = 0.95)
-# plot(TukeyHSD(anov2, conf.level = 0.95),las=1, col = "red")
-# 
-# 
-# 
-# library(gplots)
-# plotmeans(data= MyAllData, ratio ~ Condition, 
-#           main="Mean Plot with 95% Confidence Interval", 
-#           ylab = MyVariableLabel, 
-#           xlab = GrVariable)
-# 
-# bartlett.test(data= MyAllData, ratio ~ Condition)
-# levene.test(data= MyAllData, ratio ~ Condition)
-
-# 
-# 
-# anova3 <- anova_test(data=MyAllData, 
-#            dv=ratio, 
-#            wid=Subject, 
-#            within=Condition)
-# get_anova_table(anova3)
-# ef <- anova3[["ANOVA"]][["F"]]
-# ef
-# #ANOVA power analysis
-# pwr.anova.test(k = 4, n = NULL, f = anova3[["ANOVA"]][["F"]], sig.level = 0.05, power = 0.8)
+#ANOVA power analysis
+pwr.anova.test(k = 2, n = NULL, f = anova_results[1, 4], sig.level = 0.05, power = 0.8)
 
 
-#=======Friedman_test===========================================================
-t.test(subset(MyAllData, MyAllData$Condition == "SameContext")$ratio,
-       subset(MyAllData, MyAllData$Condition == "Boundary")$ratio, 
-       paired = T)
-frid_res <- MyAllData2 %>% friedman_test(ratio ~ Condition | Subject)

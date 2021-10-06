@@ -27,7 +27,7 @@ setwd("C:/Projects/Event-Segmentation")
 source("Functions_.R")
 
 #=======Data====================================================================
-AllData <- read.csv("C:/Projects/Event-Segmentation/SourceMemory_Results_All.csv")
+AllData <- read.csv("C:/Projects/Event-Segmentation/data_Clewett/Clewett_source_Exp2.csv", dec=",")
 
 #=======Variables===============================================================
 MyVariable <- "SourceAcc" #variable to test
@@ -39,13 +39,16 @@ ExpConditions
 
 #=======Data preparation========================================================
 MyAllData <- data.frame(matrix(ncol = 3, nrow = 0))
-colnames(MyAllData) <- c("Subject", "ratio", GrVariable)
+# colnames(MyAllData) <- c("Subject", "ratio", GrVariable)
 
-for (i in 1:length(ExpConditions)) {
-  tmp <- calculate_accuracy_ratio(AllData, MyVariable, ExpConditions[i])
-  MyAllData <- rbind(MyAllData, tmp)
-}
-is.factor(MyAllData$Condition)
+MyAllData <- data.frame(AllData[1], AllData[3], AllData[4])
+
+
+# for (i in 1:length(ExpConditions)) {
+#   tmp <- calculate_accuracy_ratio(AllData, MyVariable, ExpConditions[i])
+#   MyAllData <- rbind(MyAllData, tmp)
+# }
+# is.factor(MyAllData$Condition)
 
 #=======Plots titels and labels=================================================
 #General
@@ -108,12 +111,15 @@ boxplot1B <- draw_my_boxplot2(MyAllData,
 boxplot1B
 
 #=======Outliers================================================================
+as.factor(MyAllData$Condition)
+is.factor(MyAllData$Condition)
 outliers <- c(check_name_outliers(MyAllData))
 outliers
 
-MyAllData <- remove_outliers(MyAllData, outliers)
+MyAllData2 <- remove_outliers(MyAllData, outliers)
 
-is.factor(MyAllData$Condition)
+as.factor(MyAllData2$Condition)
+is.factor(MyAllData2$Condition)
 
 #=======Homoscedasticity - Levene Test==========================================
 leveneTest(MyAllData$ratio, MyAllData$Condition)
@@ -177,3 +183,26 @@ cohen_stats
 pwr.t.test(n = NULL, d = cohen_stats$cohen.d[2], sig.level = 0.05, power = 0.8,
            type = c("paired"),
            alternative = c("two.sided"))
+
+#=======Paired Samples Wilcoxon Test============================================
+
+# SameContext4 <- subset(MyAllData4,  Condition == "SameContext", ratio,
+#                  drop = TRUE)
+# Boundary4 <- subset(MyAllData4,  Condition == "Boundary", ratio,
+#                        drop = TRUE)
+# 
+# wilcox.test(SameContext4, Boundary4, paired = TRUE, alternative = "two.sided")
+
+MyHalfData3 <- subset.data.frame(MyAllData2, Condition == c("SameContext", "Boundary"))
+MyHalfData4 <- subset.data.frame(MyAllData2, Condition == c("First", "Last"))
+
+
+wilcox.test(ratio ~ Condition, data = MyHalflData3, paired = TRUE)
+
+wilcox.test(ratio ~ Condition, data = MyHalflData4, paired = TRUE)
+
+
+
+# Effect size
+MyHalfData3  %>%
+  wilcox_effsize(ratio ~ Condition, paired = TRUE)

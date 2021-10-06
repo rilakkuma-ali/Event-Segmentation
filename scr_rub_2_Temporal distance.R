@@ -27,8 +27,8 @@ setwd("C:/Projects/Event-Segmentation")
 source("Functions_.R")
 
 #=======Data====================================================================
-#AllData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All_kopia_bez3.csv")
-AllData <- read.csv("C:/Projects/Event-Segmentation/TemporalMemory_Results_All.csv")
+# AllData <- read.csv("C:/Projects/Event-Segmentation/data_RUB/TemporalMemory_Results_All_kopia_10.csv")
+AllData <- read.csv("C:/Projects/Event-Segmentation/data_RUB/TemporalMemory_Results_All.csv")
 
 #=======Variables===============================================================
 MyVariable <- "DurationRESP" #variable to test
@@ -47,24 +47,54 @@ for (i in 1:length(ExpConditions)) {
 }
 is.factor(MyAllData$Condition)
 
+
 #=======Plots titels and labels=================================================
 #General
 MyVariableLabel <- "Temporal distance"   #Label for the variable to test
-gr_title <- "Temporal distance memory performance"  #Histogram titel
+gr_title <- "Temporal distance memory accuracy ratio"  #Histogram titel
 titel_outliers_rm <- "\nOutliers removed"   #Information about removed outliers
 
 #Histogram
-hist_title <- gr_title                              # Histogram titel
+hist_title <- "Temporal distance accuracy ratio by Condition"   # Histogram titel
 bw <- 0.05                                          # Histogram bin width
-x_label <- "Performance -\n temporal distance"      # Label for x-axis
+x_label <- "Temporal distance - Accuracy ratio"         # Label for x-axis
 y_limit1 <- c(0, 5)                                 # y limit
 #QQ plot
 qqtitel <- "Quantile-Quantile plot"                 # QQ plot titel
 
 #Boxplot
-box_ylabel <- MyVariableLabel  #label for the boxplot y-axis
-box_titel <- "My boxplot titel"
-box_titel < paste(gr_title, " ", box_titel, sep="")
+# box_ylabel <- MyVariableLabel  #label for the boxplot y-axis
+box_ylabel <- "Temporal distance - accuracy ratio" #label for the boxplot y-axis
+
+box_titel <- "Temporal distance ratings accuracy ratio by condition"
+# box_titel < paste(gr_title, " ", box_titel, sep="")
+#=======Freq bar plot=====================================================
+
+cond1 <- subset(AllData, AllData$Condition == ExpConditions[1])
+cond2 <- subset(AllData, AllData$Condition == ExpConditions[2])
+
+v1 <-
+  as.data.frame(table(cond1$DurationRESP))
+v1$Condition <- ExpConditions[1]
+
+v2 <-
+  as.data.frame(table(cond2$DurationRESP))
+v2$Condition <- ExpConditions[2]
+
+
+v <- rbind(v1, v2)
+
+Barplot1 <- ggplot(data=v, aes(x=Condition,
+                               y=Freq,
+                               fill=Var1)) +
+  # ylab("Frequency")
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_brewer(palette="Paired") +
+  ggtitle(paste("Number of datapoints for each condition. \nVariable: ", MyVariable, sep="")) +
+  labs(fill = MyVariable)
+theme_minimal()
+
+Barplot1
 
 #=======Lilliefors normality test===============================================
 
@@ -99,39 +129,39 @@ ggqqplot(MyAllData, "ratio", facet.by = GrVariable,
 
 #=======Box plots===============================================================
 boxplot1B <- draw_my_boxplot2(MyAllData,
-                 "Distance \n temporal distance",
-                 "Temporal distance ratings Distance by condition")
+                 x_label,
+                 box_titel)
 boxplot1B
 
 #=======Outliers================================================================
 outliers_check <- c(check_name_outliers(MyAllData))
 outliers_check
-outliers_list <- outliers_check[3]
+outliers_list <- outliers_check
 
-MyAllData <- remove_outliers(MyAllData, outliers_list)
+MyAllData2 <- remove_outliers(MyAllData, outliers_list)
 
-is.factor(MyAllData$Condition)
+is.factor(MyAllData2$Condition)
 
 #=======Homoscedasticity - Levene Test==========================================
-leveneTest(MyAllData$ratio, MyAllData$Condition)
+leveneTest(MyAllData2$ratio, MyAllData2$Condition)
 
 #=======Histogram - After removing outliers=====================================
-gr_title <- paste(gr_title, "\n", titel_outliers_rm, sep="")
-hist1 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[1]),
+gr_title <- paste(gr_title, "\n", "Outliers removed", sep="")
+hist1 <- draw_a_hist(subset(MyAllData2, MyAllData2$Condition == ExpConditions[1]),
                      bw, ExpConditions[1], x_label, y_limit1)
-hist2 <- draw_a_hist(subset(MyAllData, MyAllData$Condition == ExpConditions[2]),
+hist2 <- draw_a_hist(subset(MyAllData2, MyAllData2$Condition == ExpConditions[2]),
                      bw, ExpConditions[2], x_label, y_limit1)
 HistogramsB <- grid.arrange(hist1, hist2, ncol = 2,
                            top = textGrob(hist_title))
 
 #=======qqplot - After removing outliers========================================
 qqtitel <- paste(qqtitel, titel_outliers_rm, sep="")
-ggqqplot(MyAllData, "ratio", facet.by = GrVariable,
+ggqqplot(MyAllData2, "ratio", facet.by = GrVariable,
          title=qqtitel)
 
 #=======Box plots - After removing outliers=====================================
 box_titel <- paste(box_titel, titel_outliers_rm, sep="")
-boxplot2B <- draw_my_boxplot2(MyAllData,
+boxplot2B <- draw_my_boxplot2(MyAllData2,
                  "Distance \n temporal distance",
                  "Temporal distance ratings Distance by condition")
 
@@ -140,11 +170,11 @@ boxplot2B
 # rm(bw, hist_title, x_label, y_limit1, y_limit2, hist1, hist2, boxplot1B, boxplot2B, HistogramsA, HistogramsB)
 
 #=======Descriptive statistics - After removing outliers========================
-describe.by(MyAllData, group = GrVariable)
+describe.by(MyAllData2, group = GrVariable)
 
 #=======Paired t-test - After removing outliers=================================
-t.test(subset(MyAllData, MyAllData$Condition == "SameContext")$ratio,
-       subset(MyAllData, MyAllData$Condition == "Boundary")$ratio, 
+t.test(subset(MyAllData2, MyAllData2$Condition == "SameContext")$ratio,
+       subset(MyAllData2, MyAllData2$Condition == "Boundary")$ratio, 
        paired = T)
 cohen_stats <- cohen.d(MyAllData$ratio, MyAllData$Condition)
 cohen_stats
