@@ -36,6 +36,7 @@ calculate_accuracy_ratio <- function(data_frame, variable, condition) {
   return(Subject_calculate_accuracy_ratio)
 }
 
+  
 #====calculate_accuracy_ratio_block()==========================================
 calculate_accuracy_ratio_block <- function(data_frame, variable, block) {
   Data_block <- subset.data.frame(data_frame, Block == block)
@@ -225,7 +226,16 @@ remove_outliers <- function(data_to_check, list_of_outliers) {
     data_to_check <- subset(data_to_check, Subject != (list_of_outliers[i]))}
   return((data_to_check))
 }
+#====name_subjects_del()======================
 
+name_subjects_del <- function(data_frame, subject_variable, variable, value) {
+  Subject_calculate_accuracy_ratio <-
+    data_frame %>%
+    group_by(Subject) %>%
+    summarise_at(vars(variable), 
+                 list(ratio = mean))
+  
+}
 #====split_time_series()========================================================
 split_time_series <- function(dat, variab, var_names, conditions) {
   
