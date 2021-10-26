@@ -24,6 +24,7 @@ library(ggstatsplot)
 #       data_frame: specify dataframe, (MyData, ..., ...)
 #       variable: specify variable for ratio (..., "ReccencyACC", ...)
 #       condition: specify experimental condition (..., ..., "SameContext")
+
 calculate_accuracy_ratio <- function(data_frame, variable, condition) {
   Data_condition <- subset.data.frame(data_frame, Condition == condition)
   Subject_calculate_accuracy_ratio <-
@@ -35,10 +36,17 @@ calculate_accuracy_ratio <- function(data_frame, variable, condition) {
   Subject_calculate_accuracy_ratio$Condition <- as.factor(Subject_calculate_accuracy_ratio$Condition)
   return(Subject_calculate_accuracy_ratio)
 }
-
-  
-#====calculate_accuracy_ratio_block()==========================================
-calculate_accuracy_ratio_block <- function(data_frame, variable, block) {
+#====calculate_accuracy_ratio_all=================================
+calculate_accuracy_ratio_all <- function(data_frame, variable, grouping_var) {
+  Subject_calculate_accuracy_ratio <-
+    # dplyr::group_by(grouping_var) %>%
+    group_by(grouping_var) %>%
+    
+    summarise_at(vars(variable), 
+                 list(ratio = mean))
+  return(Subject_calculate_accuracy_ratio)
+}
+ calculate_accuracy_ratio_block <- function(data_frame, variable, block) {
   Data_block <- subset.data.frame(data_frame, Block == block)
   Subject_calculate_accuracy_ratio <-
     Data_block %>%
@@ -49,6 +57,8 @@ calculate_accuracy_ratio_block <- function(data_frame, variable, block) {
   # Subject_calculate_accuracy_ratio$Block <- as.factor(Subject_calculate_accuracy_ratio$block)
   return(Subject_calculate_accuracy_ratio)
 }
+ 
+#====calculate_accuracy_ratio_block()==========================================
 
 
 #====create_MyAllData()=========================================================

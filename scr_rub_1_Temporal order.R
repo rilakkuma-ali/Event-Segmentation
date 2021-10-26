@@ -50,6 +50,7 @@ ExpConditions
 MyAllData <- data.frame(matrix(ncol = 3, nrow = 0))
 colnames(MyAllData) <- c("Subject", "ratio", GrVariable)
 
+
 for (i in 1:length(ExpConditions)) {
   tmp <- calculate_accuracy_ratio(AllData, MyVariable, ExpConditions[i])
   MyAllData <- rbind(MyAllData, tmp)
@@ -57,6 +58,19 @@ for (i in 1:length(ExpConditions)) {
 }
 is.factor(MyAllData$Condition)
 
+#=======Filtering participants < ratio 0.5============================
+# as.factor(AllData$Subject)
+# is.factor(AllData$Subject)
+
+testing <- calculate_accuracy_ratio_all(AllData, AllData$RecencyAcc, AllData$Subject)
+
+Subject_calculate_accuracy_ratio <-
+    # dplyr::group_by(grouping_var) %>%
+  AllData %>%
+    group_by(AllData$Subject) %>%
+    summarise_at(vars(AllData$RecencyAcc), 
+                 list(ratio = mean))
+Subject_calculate_accuracy_ratio
 # #=======Row data - mean for Blocks==============================================
 # # MyData_Blocks stores mean values (ratio) for each Block and each participant 
 # # across all  conditions
@@ -135,16 +149,16 @@ is.factor(MyAllData$Condition)
 # subjects_to_del <- name_subjects_del(AllData, AllData$Subject, AllData$RecencyAcc, 0.50)
 # subjects_to_del
 
-Subject_calculate_accuracy_ratio <-
-    AllData %>%
-    group_by(Subject) %>%
-    summarise_at(vars(AllData$RecencyAcc), 
-                 list(ratio = mean))
-
-Subject_calculate_accuracy_ratio
-MyAllData <- remove_outliers(MyAllData, subjects_to_del)
-
-is.factor(MyAllData$Condition)
+# Subject_calculate_accuracy_ratio <-
+#     AllData %>%
+#     group_by(Subject) %>%
+#     summarise_at(vars(AllData$RecencyAcc), 
+#                  list(ratio = mean))
+# 
+# Subject_calculate_accuracy_ratio
+# MyAllData <- remove_outliers(MyAllData, subjects_to_del)
+# 
+# is.factor(MyAllData$Condition)
 
 
 # # Removing subjects with ratio (for any condition) < x
