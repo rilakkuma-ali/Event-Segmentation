@@ -59,112 +59,16 @@ for (i in 1:length(ExpConditions)) {
 is.factor(MyAllData$Condition)
 
 #=======Filtering participants < ratio 0.5============================
-# as.factor(AllData$Subject)
-# is.factor(AllData$Subject)
-
-testing <- calculate_accuracy_ratio_all(AllData, AllData$RecencyAcc, AllData$Subject)
-
 Subject_calculate_accuracy_ratio <-
-    # dplyr::group_by(grouping_var) %>%
   AllData %>%
-    group_by(AllData$Subject) %>%
-    summarise_at(vars(AllData$RecencyAcc), 
+    group_by(Subject) %>%
+    summarise_at(MyVariable, 
                  list(ratio = mean))
 Subject_calculate_accuracy_ratio
-# #=======Row data - mean for Blocks==============================================
-# # MyData_Blocks stores mean values (ratio) for each Block and each participant 
-# # across all  conditions
-# MyData_Blocks <- data.frame(matrix(ncol = 3, nrow = 0))
-# colnames(MyData_Blocks) <- c("Subject", "Block", "ratio")
-# 
-# for (i in 1:length(Blocks)) {
-#   tmp <- calculate_accuracy_ratio_block(AllData, MyVariable, Blocks[i])
-#   MyData_Blocks <- rbind(MyData_Blocks, tmp)
-#   rm(tmp)
-# }
-# 
-# MyData_Blocks_cond1 <- data.frame(matrix(ncol = 4, nrow = 0))
-# colnames(MyData_Blocks_cond1) <- c("Subject", "ratio", "Block", "Condition")
-# 
-# data_tmp <- AllData %>% 
-#   filter(Condition==ExpConditions[1]) 
-# for (i in 1:length(Blocks)) {
-#   tmp <- calculate_accuracy_ratio_block(data_tmp, MyVariable, Blocks[i])
-#   tmp$Condition <- ExpConditions[1]
-#   MyData_Blocks_cond1 <- rbind(MyData_Blocks_cond1, tmp)
-#   rm(tmp)
-# }
-# 
-# MyData_Blocks_cond2 <- data.frame(matrix(ncol = 4, nrow = 0))
-# colnames(MyData_Blocks_cond2) <- c("Subject", "ratio", "Block", "Condition")
-# 
-# data_tmp <- AllData %>% 
-#   filter(Condition==ExpConditions[2]) 
-# for (i in 1:length(Blocks)) {
-#   tmp <- calculate_accuracy_ratio_block(data_tmp, MyVariable, Blocks[i])
-#   tmp$Condition <- ExpConditions[2]
-#   MyData_Blocks_cond2 <- rbind(MyData_Blocks_cond2, tmp)
-#   rm(tmp)
-# }
-# 
-# MyData_Blocks_cond <- rbind(MyData_Blocks_cond1, MyData_Blocks_cond2)
-# 
-# 
-# # is.factor(MyData_Blocks$Condition)
-# 
-# # MyData_Blocks stores mean values (ratio) for each Block and each participant 
-# # for each condition
-# 
-# MyData_Blocks <- data.frame(matrix(ncol = 3, nrow = 0))
-# colnames(MyData_Blocks) <- c("Subject", "Block", "ratio")
-# 
-# for (i in 1:length(Blocks)) {
-#   tmp <- calculate_accuracy_ratio_block(AllData, MyVariable, Blocks[i])
-#   MyData_Blocks <- rbind(MyData_Blocks, tmp)
-#   rm(tmp)
-# }
 
-#=======Filtering participants==================================================
-
-
-# # Removing subjects with ratio (avaraged in both conditions an in all af the trials) < x
-# subjects_to_del <- name_subjects_del(MyData_Blocks, MyData_Blocks$Subject, 0.50)
-# subjects_to_del
-# 
-# MyAllData <- remove_outliers(MyAllData, subjects_to_del)
-# 
-# is.factor(MyAllData$Condition)
-
-
-# # Removing subjects with ratio (avaraged in both conditions an in any of the trials) < x
-# subjects_to_del <- name_subjects_del(MyData_Blocks, MyData_Blocks$Subject, 0.50)
-# subjects_to_del
-# 
-# MyAllData <- remove_outliers(MyAllData, subjects_to_del)
-# 
-# is.factor(MyAllData$Condition)
-
-
-# Removing subjects with ratio (avaraged in both conditions) < x
-# subjects_to_del <- name_subjects_del(AllData, AllData$Subject, AllData$RecencyAcc, 0.50)
-# subjects_to_del
-
-# Subject_calculate_accuracy_ratio <-
-#     AllData %>%
-#     group_by(Subject) %>%
-#     summarise_at(vars(AllData$RecencyAcc), 
-#                  list(ratio = mean))
-# 
-# Subject_calculate_accuracy_ratio
-# MyAllData <- remove_outliers(MyAllData, subjects_to_del)
-# 
-# is.factor(MyAllData$Condition)
-
-
-# # Removing subjects with ratio (for any condition) < x
-# subjects_to_del <- MyAllData %>% filter(ratio < 0.5)
-# subjects_to_del <- unique(c(subjects_to_del$Subject))
-# subjects_to_del
+subjects_to_del <- Subject_calculate_accuracy_ratio %>% filter(ratio < 0.5)
+subjects_to_del <- unique(c(subjects_to_del$Subject))
+subjects_to_del
 
 MyAllData <- remove_outliers(MyAllData, subjects_to_del)
 
